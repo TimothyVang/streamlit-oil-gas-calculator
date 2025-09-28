@@ -522,13 +522,14 @@ def export_to_excel(df, summary, params, mc_results=None, risk_metrics=None):
 
         # 2. Monthly Analysis Sheet with formatting
         monthly_df = df.copy()
-        # Format columns for better readability
+        # Format columns for better readability (simplified decimal places)
         monthly_df = monthly_df.round({
             'Oil_Production': 0, 'Gas_Production': 0,
-            'Oil_Revenue': 1, 'Gas_Revenue': 1, 'Total_Revenue': 1,
-            'Operating_Expenses': 1, 'Severance_Tax': 1, 'Total_OpEx': 1,
-            'Net_Operating_Income': 1, 'CapEx': 1, 'Net_Cash_Flow': 1,
-            'Cumulative_Cash_Flow': 1, 'PV_Cash_Flow': 1
+            'Oil_Revenue': 0, 'Gas_Revenue': 0, 'Total_Revenue': 0,
+            'Operating_Expenses': 0, 'Severance_Tax': 0, 'Total_OpEx': 0,
+            'Net_Operating_Income': 0, 'CapEx': 0, 'Net_Cash_Flow': 0,
+            'Cumulative_Cash_Flow': 0, 'PV_Cash_Flow': 0,
+            'PV_Factor': 4  # Keep 4 decimals for PV Factor only
         })
 
         # Rename columns for professional presentation
@@ -570,9 +571,14 @@ def export_to_excel(df, summary, params, mc_results=None, risk_metrics=None):
                 cell = monthly_ws.cell(row=row, column=col)
                 cell.font = data_font
                 cell.border = border
-                # Format currency columns
-                if 'Revenue' in monthly_df.columns[col-1] or 'Cash Flow' in monthly_df.columns[col-1] or 'Expense' in monthly_df.columns[col-1] or 'CapEx' in monthly_df.columns[col-1]:
-                    cell.number_format = '#,##0.0'
+                # Format currency columns (no decimals for currency, 4 decimals for PV Factor)
+                col_name = monthly_df.columns[col-1]
+                if 'PV Factor' in col_name:
+                    cell.number_format = '0.0000'
+                elif any(term in col_name for term in ['Revenue', 'Cash Flow', 'Expense', 'CapEx', 'OpEx', 'Income']):
+                    cell.number_format = '#,##0'
+                elif any(term in col_name for term in ['Production']):
+                    cell.number_format = '#,##0'
 
         # Auto-size columns
         for column in monthly_ws.columns:
@@ -601,7 +607,7 @@ def export_to_excel(df, summary, params, mc_results=None, risk_metrics=None):
                 elif 'Production' in key:
                     formatted_value = f"{value:,.0f} bbl/month"
                 else:
-                    formatted_value = f"{value:,.2f}"
+                    formatted_value = f"{value:,.0f}"  # Simplified to whole numbers
             else:
                 formatted_value = str(value)
             summary_data.append([formatted_key, formatted_value])
@@ -696,12 +702,14 @@ def export_to_excel(df, summary, params, mc_results=None, risk_metrics=None):
                 if isinstance(value, (int, float)):
                     if 'NPV' in key:
                         formatted_value = f"${value:,.0f}k"
-                    elif 'Probability' in key or 'Coefficient' in key:
+                    elif 'Probability' in key:
                         formatted_value = f"{value:.1f}%"
+                    elif 'Coefficient' in key:
+                        formatted_value = f"{value:.2f}"
                     elif 'Return' in key or 'Deviation' in key:
                         formatted_value = f"{value:.2f}"
                     else:
-                        formatted_value = f"{value:,.2f}"
+                        formatted_value = f"{value:,.0f}"  # Simplified to whole numbers
                 else:
                     formatted_value = str(value)
                 risk_data.append([formatted_key, formatted_value])
@@ -744,7 +752,7 @@ def export_to_csv_professional(df, summary, params, mc_results=None, risk_metric
     csv_content.append([f'Generated: {datetime.now().strftime("%B %d, %Y at %I:%M %p")}'])
     csv_content.append([''])
 
-    # Executive Summary
+    # Executive Summary (clean formatting)
     csv_content.append(['=== EXECUTIVE SUMMARY ==='])
     csv_content.append(['Metric', 'Value'])
     csv_content.append(['Total Investment Required', f"${summary['Total_Investment']:,.0f}k"])
@@ -776,14 +784,15 @@ def export_to_csv_professional(df, summary, params, mc_results=None, risk_metric
     # Monthly Analysis
     csv_content.append(['=== MONTHLY FINANCIAL ANALYSIS ==='])
 
-    # Format the monthly data
+    # Format the monthly data (simplified decimal places)
     monthly_df = df.copy()
     monthly_df = monthly_df.round({
         'Oil_Production': 0, 'Gas_Production': 0,
-        'Oil_Revenue': 1, 'Gas_Revenue': 1, 'Total_Revenue': 1,
-        'Operating_Expenses': 1, 'Severance_Tax': 1, 'Total_OpEx': 1,
-        'Net_Operating_Income': 1, 'CapEx': 1, 'Net_Cash_Flow': 1,
-        'Cumulative_Cash_Flow': 1, 'PV_Cash_Flow': 1
+        'Oil_Revenue': 0, 'Gas_Revenue': 0, 'Total_Revenue': 0,
+        'Operating_Expenses': 0, 'Severance_Tax': 0, 'Total_OpEx': 0,
+        'Net_Operating_Income': 0, 'CapEx': 0, 'Net_Cash_Flow': 0,
+        'Cumulative_Cash_Flow': 0, 'PV_Cash_Flow': 0,
+        'PV_Factor': 4  # Keep 4 decimals for PV Factor only
     })
 
     # Rename columns for professional presentation
@@ -823,10 +832,12 @@ def export_to_csv_professional(df, summary, params, mc_results=None, risk_metric
                     formatted_value = f"${value:,.0f}k"
                 elif 'Probability' in key:
                     formatted_value = f"{value:.1f}%"
+                elif 'Coefficient' in key:
+                    formatted_value = f"{value:.2f}"
                 elif 'Return' in key or 'Deviation' in key:
                     formatted_value = f"{value:.2f}"
                 else:
-                    formatted_value = f"{value:,.2f}"
+                    formatted_value = f"{value:,.0f}"  # Simplified to whole numbers
             else:
                 formatted_value = str(value)
             csv_content.append([formatted_key, formatted_value])
@@ -966,10 +977,8 @@ def main():
                           'Net_Cash_Flow', 'Cumulative_Cash_Flow']
 
         for col in numeric_columns:
-            if col in ['Oil_Production', 'Gas_Production']:
-                display_df[col] = display_df[col].round(0).astype(int)
-            else:
-                display_df[col] = display_df[col].round(1)
+            # Round all values to whole numbers for cleaner display
+            display_df[col] = display_df[col].round(0).astype(int)
 
         # Select key columns for display
         key_columns = ['Month', 'Oil_Production', 'Total_Revenue', 'Total_OpEx',
@@ -977,7 +986,7 @@ def main():
 
         # Rename for better display
         display_df = display_df.rename(columns={
-            'Oil_Production': 'Oil Prod (bbl)',
+            'Oil_Production': 'Oil Production (bbl)',
             'Total_Revenue': 'Revenue ($k)',
             'Total_OpEx': 'OpEx ($k)',
             'Net_Operating_Income': 'Net Income ($k)',
@@ -986,9 +995,11 @@ def main():
             'Cumulative_Cash_Flow': 'Cumulative CF ($k)'
         })
 
-        st.dataframe(display_df[['Month', 'Oil Prod (bbl)', 'Revenue ($k)', 'OpEx ($k)',
-                                'Net Income ($k)', 'CapEx ($k)', 'Net CF ($k)', 'Cumulative CF ($k)']],
-                    use_container_width=True)
+        # Create a styled dataframe for better readability
+        formatted_df = display_df[['Month', 'Oil Production (bbl)', 'Revenue ($k)', 'OpEx ($k)',
+                                  'Net Income ($k)', 'CapEx ($k)', 'Net CF ($k)', 'Cumulative CF ($k)']].copy()
+
+        st.dataframe(formatted_df, use_container_width=True)
 
     # Scenario comparison
     st.header("🎯 Scenario Comparison")
