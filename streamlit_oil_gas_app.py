@@ -470,31 +470,377 @@ def create_risk_assessment(mc_results):
     }
 
 def export_to_excel(df, summary, params, mc_results=None, risk_metrics=None):
-    """Export results to Excel file"""
+    """Export results to professionally formatted Excel file"""
     output = BytesIO()
 
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        # Monthly data
-        df.to_excel(writer, sheet_name='Monthly_Analysis', index=False)
+        from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+        from openpyxl.utils.dataframe import dataframe_to_rows
+        from openpyxl.formatting.rule import ColorScaleRule
 
-        # Summary metrics
-        summary_df = pd.DataFrame(list(summary.items()), columns=['Metric', 'Value'])
-        summary_df.to_excel(writer, sheet_name='Summary_Metrics', index=False)
+        # Define professional styling
+        header_font = Font(name='Calibri', size=12, bold=True, color='FFFFFF')
+        header_fill = PatternFill(start_color='1F4E79', end_color='1F4E79', fill_type='solid')
+        data_font = Font(name='Calibri', size=11)
+        currency_font = Font(name='Calibri', size=11)
+        border = Border(left=Side(style='thin'), right=Side(style='thin'),
+                       top=Side(style='thin'), bottom=Side(style='thin'))
+        center_align = Alignment(horizontal='center', vertical='center')
 
-        # Parameters used
-        params_df = pd.DataFrame(list(params.items()), columns=['Parameter', 'Value'])
-        params_df.to_excel(writer, sheet_name='Parameters', index=False)
+        # 1. Executive Summary Sheet
+        exec_summary = writer.book.create_sheet('Executive_Summary', 0)
+        exec_summary['A1'] = 'BAH Jackson Sands - Oil & Gas Investment Analysis'
+        exec_summary['A1'].font = Font(name='Calibri', size=16, bold=True, color='1F4E79')
+        exec_summary['A2'] = f'Generated: {datetime.now().strftime("%B %d, %Y at %I:%M %p")}'
+        exec_summary['A2'].font = Font(name='Calibri', size=10, italic=True)
 
-        # Add Monte Carlo results if available
+        # Key metrics in executive summary
+        exec_data = [
+            ['KEY INVESTMENT METRICS', ''],
+            ['Total Investment Required', f"${summary['Total_Investment']:,.0f}k"],
+            ['Net Present Value (NPV)', f"${summary['NPV']:,.0f}k"],
+            ['Internal Rate of Return (IRR)', f"{summary['IRR']:.1f}%"],
+            ['Payback Period', f"{summary['Payback_Months']:.0f} months"],
+            ['Final Cumulative Cash Flow', f"${summary['Final_Cumulative_CF']:,.0f}k"],
+            ['', ''],
+            ['PRODUCTION SUMMARY', ''],
+            ['Peak Oil Production', f"{summary['Peak_Production']:,.0f} bbl/month"],
+            ['Final Oil Production', f"{summary['Final_Production']:,.0f} bbl/month"],
+            ['Total Revenue (60 months)', f"${summary['Total_Revenue']:,.0f}k"]
+        ]
+
+        for row_idx, (metric, value) in enumerate(exec_data, start=4):
+            exec_summary[f'A{row_idx}'] = metric
+            exec_summary[f'B{row_idx}'] = value
+            if metric.isupper():  # Section headers
+                exec_summary[f'A{row_idx}'].font = Font(name='Calibri', size=12, bold=True, color='1F4E79')
+            exec_summary[f'A{row_idx}'].font = Font(name='Calibri', size=11, bold=metric != '')
+
+        # Auto-size columns
+        exec_summary.column_dimensions['A'].width = 30
+        exec_summary.column_dimensions['B'].width = 20
+
+        # 2. Monthly Analysis Sheet with formatting
+        monthly_df = df.copy()
+        # Format columns for better readability
+        monthly_df = monthly_df.round({
+            'Oil_Production': 0, 'Gas_Production': 0,
+            'Oil_Revenue': 1, 'Gas_Revenue': 1, 'Total_Revenue': 1,
+            'Operating_Expenses': 1, 'Severance_Tax': 1, 'Total_OpEx': 1,
+            'Net_Operating_Income': 1, 'CapEx': 1, 'Net_Cash_Flow': 1,
+            'Cumulative_Cash_Flow': 1, 'PV_Cash_Flow': 1
+        })
+
+        # Rename columns for professional presentation
+        monthly_df = monthly_df.rename(columns={
+            'Oil_Production': 'Oil Production (bbl)',
+            'Gas_Production': 'Gas Production (MCF)',
+            'Oil_Revenue': 'Oil Revenue ($k)',
+            'Gas_Revenue': 'Gas Revenue ($k)',
+            'Total_Revenue': 'Total Revenue ($k)',
+            'Operating_Expenses': 'Operating Expenses ($k)',
+            'Severance_Tax': 'Severance Tax ($k)',
+            'Total_OpEx': 'Total OpEx ($k)',
+            'Net_Operating_Income': 'Net Operating Income ($k)',
+            'CapEx': 'Capital Expenditure ($k)',
+            'Net_Cash_Flow': 'Net Cash Flow ($k)',
+            'Cumulative_Cash_Flow': 'Cumulative Cash Flow ($k)',
+            'PV_Factor': 'PV Factor',
+            'PV_Cash_Flow': 'PV Cash Flow ($k)'
+        })
+
+        monthly_df.to_excel(writer, sheet_name='Monthly_Analysis', index=False, startrow=1)
+        monthly_ws = writer.sheets['Monthly_Analysis']
+
+        # Add title and format headers
+        monthly_ws['A1'] = 'Monthly Financial Analysis - 60 Month Projection'
+        monthly_ws['A1'].font = Font(name='Calibri', size=14, bold=True, color='1F4E79')
+
+        # Format headers
+        for col in range(1, len(monthly_df.columns) + 1):
+            cell = monthly_ws.cell(row=2, column=col)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = center_align
+            cell.border = border
+
+        # Format data cells
+        for row in range(3, len(monthly_df) + 3):
+            for col in range(1, len(monthly_df.columns) + 1):
+                cell = monthly_ws.cell(row=row, column=col)
+                cell.font = data_font
+                cell.border = border
+                # Format currency columns
+                if 'Revenue' in monthly_df.columns[col-1] or 'Cash Flow' in monthly_df.columns[col-1] or 'Expense' in monthly_df.columns[col-1] or 'CapEx' in monthly_df.columns[col-1]:
+                    cell.number_format = '#,##0.0'
+
+        # Auto-size columns
+        for column in monthly_ws.columns:
+            max_length = 0
+            column_letter = column[0].column_letter
+            for cell in column:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(str(cell.value))
+                except:
+                    pass
+            adjusted_width = min(max_length + 2, 25)
+            monthly_ws.column_dimensions[column_letter].width = adjusted_width
+
+        # 3. Investment Summary Sheet
+        summary_data = []
+        for key, value in summary.items():
+            formatted_key = key.replace('_', ' ').title()
+            if isinstance(value, (int, float)):
+                if 'NPV' in key or 'Revenue' in key or 'Investment' in key or 'CF' in key:
+                    formatted_value = f"${value:,.0f}k"
+                elif 'IRR' in key:
+                    formatted_value = f"{value:.1f}%"
+                elif 'Months' in key:
+                    formatted_value = f"{value:.0f} months"
+                elif 'Production' in key:
+                    formatted_value = f"{value:,.0f} bbl/month"
+                else:
+                    formatted_value = f"{value:,.2f}"
+            else:
+                formatted_value = str(value)
+            summary_data.append([formatted_key, formatted_value])
+
+        summary_df = pd.DataFrame(summary_data, columns=['Investment Metric', 'Value'])
+        summary_df.to_excel(writer, sheet_name='Investment_Summary', index=False, startrow=1)
+        summary_ws = writer.sheets['Investment_Summary']
+
+        # Format Investment Summary sheet
+        summary_ws['A1'] = 'Investment Performance Summary'
+        summary_ws['A1'].font = Font(name='Calibri', size=14, bold=True, color='1F4E79')
+
+        # Format headers and data
+        for col in range(1, 3):
+            cell = summary_ws.cell(row=2, column=col)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = center_align
+            cell.border = border
+
+        for row in range(3, len(summary_df) + 3):
+            for col in range(1, 3):
+                cell = summary_ws.cell(row=row, column=col)
+                cell.font = data_font
+                cell.border = border
+
+        summary_ws.column_dimensions['A'].width = 30
+        summary_ws.column_dimensions['B'].width = 20
+
+        # 4. Parameters Sheet
+        params_data = []
+        for key, value in params.items():
+            if isinstance(value, (int, float)):
+                if 'Price' in key and '$' not in key:
+                    formatted_value = f"${value:.2f}"
+                elif '%' in key:
+                    formatted_value = f"{value:.1f}%"
+                else:
+                    formatted_value = f"{value:,.0f}"
+            else:
+                formatted_value = str(value)
+            params_data.append([key, formatted_value])
+
+        params_df = pd.DataFrame(params_data, columns=['Parameter', 'Value'])
+        params_df.to_excel(writer, sheet_name='Input_Parameters', index=False, startrow=1)
+        params_ws = writer.sheets['Input_Parameters']
+
+        # Format Parameters sheet
+        params_ws['A1'] = 'Model Input Parameters'
+        params_ws['A1'].font = Font(name='Calibri', size=14, bold=True, color='1F4E79')
+
+        # Format headers and data
+        for col in range(1, 3):
+            cell = params_ws.cell(row=2, column=col)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = center_align
+            cell.border = border
+
+        for row in range(3, len(params_df) + 3):
+            for col in range(1, 3):
+                cell = params_ws.cell(row=row, column=col)
+                cell.font = data_font
+                cell.border = border
+
+        params_ws.column_dimensions['A'].width = 35
+        params_ws.column_dimensions['B'].width = 20
+
+        # 5. Monte Carlo Results (if available)
         if mc_results is not None:
-            mc_results.to_excel(writer, sheet_name='Monte_Carlo_Results', index=False)
+            # Sample of Monte Carlo results for Excel (first 1000 rows to avoid file size issues)
+            mc_sample = mc_results.head(1000).round(2)
+            mc_sample.to_excel(writer, sheet_name='Monte_Carlo_Sample', index=False, startrow=1)
+            mc_ws = writer.sheets['Monte_Carlo_Sample']
 
+            mc_ws['A1'] = f'Monte Carlo Simulation Results (Sample of {len(mc_sample)} runs)'
+            mc_ws['A1'].font = Font(name='Calibri', size=14, bold=True, color='1F4E79')
+
+            # Format headers
+            for col in range(1, len(mc_sample.columns) + 1):
+                cell = mc_ws.cell(row=2, column=col)
+                cell.font = header_font
+                cell.fill = header_fill
+                cell.alignment = center_align
+                cell.border = border
+
+        # 6. Risk Assessment (if available)
         if risk_metrics is not None:
-            risk_df = pd.DataFrame(list(risk_metrics.items()), columns=['Risk_Metric', 'Value'])
-            risk_df.to_excel(writer, sheet_name='Risk_Assessment', index=False)
+            risk_data = []
+            for key, value in risk_metrics.items():
+                formatted_key = key.replace('_', ' ').title()
+                if isinstance(value, (int, float)):
+                    if 'NPV' in key:
+                        formatted_value = f"${value:,.0f}k"
+                    elif 'Probability' in key or 'Coefficient' in key:
+                        formatted_value = f"{value:.1f}%"
+                    elif 'Return' in key or 'Deviation' in key:
+                        formatted_value = f"{value:.2f}"
+                    else:
+                        formatted_value = f"{value:,.2f}"
+                else:
+                    formatted_value = str(value)
+                risk_data.append([formatted_key, formatted_value])
+
+            risk_df = pd.DataFrame(risk_data, columns=['Risk Metric', 'Value'])
+            risk_df.to_excel(writer, sheet_name='Risk_Assessment', index=False, startrow=1)
+            risk_ws = writer.sheets['Risk_Assessment']
+
+            risk_ws['A1'] = 'Monte Carlo Risk Assessment'
+            risk_ws['A1'].font = Font(name='Calibri', size=14, bold=True, color='1F4E79')
+
+            # Format headers and data
+            for col in range(1, 3):
+                cell = risk_ws.cell(row=2, column=col)
+                cell.font = header_font
+                cell.fill = header_fill
+                cell.alignment = center_align
+                cell.border = border
+
+            for row in range(3, len(risk_df) + 3):
+                for col in range(1, 3):
+                    cell = risk_ws.cell(row=row, column=col)
+                    cell.font = data_font
+                    cell.border = border
+
+            risk_ws.column_dimensions['A'].width = 30
+            risk_ws.column_dimensions['B'].width = 20
 
     output.seek(0)
     return output
+
+def export_to_csv_professional(df, summary, params, mc_results=None, risk_metrics=None):
+    """Export results to professional CSV with multiple sections"""
+
+    # Create a comprehensive dataset
+    csv_content = []
+
+    # Header section
+    csv_content.append(['BAH Jackson Sands - Oil & Gas Investment Analysis'])
+    csv_content.append([f'Generated: {datetime.now().strftime("%B %d, %Y at %I:%M %p")}'])
+    csv_content.append([''])
+
+    # Executive Summary
+    csv_content.append(['=== EXECUTIVE SUMMARY ==='])
+    csv_content.append(['Metric', 'Value'])
+    csv_content.append(['Total Investment Required', f"${summary['Total_Investment']:,.0f}k"])
+    csv_content.append(['Net Present Value (NPV)', f"${summary['NPV']:,.0f}k"])
+    csv_content.append(['Internal Rate of Return (IRR)', f"{summary['IRR']:.1f}%"])
+    csv_content.append(['Payback Period', f"{summary['Payback_Months']:.0f} months"])
+    csv_content.append(['Final Cumulative Cash Flow', f"${summary['Final_Cumulative_CF']:,.0f}k"])
+    csv_content.append(['Peak Oil Production', f"{summary['Peak_Production']:,.0f} bbl/month"])
+    csv_content.append(['Final Oil Production', f"{summary['Final_Production']:,.0f} bbl/month"])
+    csv_content.append(['Total Revenue (60 months)', f"${summary['Total_Revenue']:,.0f}k"])
+    csv_content.append([''])
+
+    # Input Parameters
+    csv_content.append(['=== INPUT PARAMETERS ==='])
+    csv_content.append(['Parameter', 'Value'])
+    for key, value in params.items():
+        if isinstance(value, (int, float)):
+            if 'Price' in key and '$' not in key:
+                formatted_value = f"${value:.2f}"
+            elif '%' in key:
+                formatted_value = f"{value:.1f}%"
+            else:
+                formatted_value = f"{value:,.0f}"
+        else:
+            formatted_value = str(value)
+        csv_content.append([key, formatted_value])
+    csv_content.append([''])
+
+    # Monthly Analysis
+    csv_content.append(['=== MONTHLY FINANCIAL ANALYSIS ==='])
+
+    # Format the monthly data
+    monthly_df = df.copy()
+    monthly_df = monthly_df.round({
+        'Oil_Production': 0, 'Gas_Production': 0,
+        'Oil_Revenue': 1, 'Gas_Revenue': 1, 'Total_Revenue': 1,
+        'Operating_Expenses': 1, 'Severance_Tax': 1, 'Total_OpEx': 1,
+        'Net_Operating_Income': 1, 'CapEx': 1, 'Net_Cash_Flow': 1,
+        'Cumulative_Cash_Flow': 1, 'PV_Cash_Flow': 1
+    })
+
+    # Rename columns for professional presentation
+    monthly_df = monthly_df.rename(columns={
+        'Oil_Production': 'Oil Production (bbl)',
+        'Gas_Production': 'Gas Production (MCF)',
+        'Oil_Revenue': 'Oil Revenue ($k)',
+        'Gas_Revenue': 'Gas Revenue ($k)',
+        'Total_Revenue': 'Total Revenue ($k)',
+        'Operating_Expenses': 'Operating Expenses ($k)',
+        'Severance_Tax': 'Severance Tax ($k)',
+        'Total_OpEx': 'Total OpEx ($k)',
+        'Net_Operating_Income': 'Net Operating Income ($k)',
+        'CapEx': 'Capital Expenditure ($k)',
+        'Net_Cash_Flow': 'Net Cash Flow ($k)',
+        'Cumulative_Cash_Flow': 'Cumulative Cash Flow ($k)',
+        'PV_Factor': 'PV Factor',
+        'PV_Cash_Flow': 'PV Cash Flow ($k)'
+    })
+
+    # Add headers
+    csv_content.append(list(monthly_df.columns))
+
+    # Add data rows
+    for _, row in monthly_df.iterrows():
+        csv_content.append(list(row))
+
+    # Add risk metrics if available
+    if risk_metrics is not None:
+        csv_content.append([''])
+        csv_content.append(['=== RISK ASSESSMENT METRICS ==='])
+        csv_content.append(['Risk Metric', 'Value'])
+        for key, value in risk_metrics.items():
+            formatted_key = key.replace('_', ' ').title()
+            if isinstance(value, (int, float)):
+                if 'NPV' in key:
+                    formatted_value = f"${value:,.0f}k"
+                elif 'Probability' in key:
+                    formatted_value = f"{value:.1f}%"
+                elif 'Return' in key or 'Deviation' in key:
+                    formatted_value = f"{value:.2f}"
+                else:
+                    formatted_value = f"{value:,.2f}"
+            else:
+                formatted_value = str(value)
+            csv_content.append([formatted_key, formatted_value])
+
+    # Convert to CSV string
+    import csv
+    from io import StringIO
+
+    output = StringIO()
+    writer = csv.writer(output)
+    for row in csv_content:
+        writer.writerow(row)
+
+    return output.getvalue()
 
 # Main Application
 def main():
@@ -904,12 +1250,24 @@ def main():
 
     with col2:
         if st.button("📊 Export to CSV"):
-            csv_data = df.to_csv(index=False)
+            # Include Monte Carlo results if available
+            mc_results = st.session_state.get('mc_results', None)
+            risk_metrics = st.session_state.get('risk_metrics', None)
+
+            params = {
+                'Oil Price ($/bbl)': oil_price,
+                'Gas Price ($/MCF)': gas_price,
+                'Initial Production (bbl/month)': initial_production,
+                'Monthly Decline Rate (%)': decline_rate,
+                'Discount Rate (%)': discount_rate
+            }
+
+            csv_data = export_to_csv_professional(df, summary, params, mc_results, risk_metrics)
 
             st.download_button(
-                label="📥 Download CSV File",
+                label="📥 Download Professional CSV Report",
                 data=csv_data,
-                file_name=f"BAH_Jackson_Sands_Monthly_Data_{datetime.now().strftime('%Y%m%d_%H%M')}.csv",
+                file_name=f"BAH_Jackson_Sands_Complete_Analysis_{datetime.now().strftime('%Y%m%d_%H%M')}.csv",
                 mime="text/csv"
             )
 

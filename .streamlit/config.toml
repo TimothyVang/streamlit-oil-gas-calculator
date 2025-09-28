@@ -1,0 +1,28 @@
+[global]
+# Global configuration options
+
+[server]
+# Server configuration
+port = 8501
+headless = true
+enableCORS = false
+enableXsrfProtection = false
+maxUploadSize = 1028
+
+[browser]
+# Browser configuration
+gatherUsageStats = false
+showErrorDetails = true
+
+[theme]
+# UI theme
+primaryColor = "#1f4e79"
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#f0f2f6"
+textColor = "#262730"
+font = "sans serif"
+
+[logger]
+# Logging configuration
+level = "info"
+messageFormat = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"

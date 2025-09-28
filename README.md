@@ -6,20 +6,37 @@ This Streamlit application provides **investor-grade oil & gas financial analysi
 
 ## ⚡ Quick Start
 
+### Option 1: Simple Run
 ```bash
 # Install dependencies
 pip install -r requirements.txt
 
 # Run the application
-streamlit run streamlit_oil_gas_app.py
+streamlit run app.py
+```
+
+### Option 2: Using the Runner Script
+```bash
+# Install dependencies
+pip install -r requirements.txt
+
+# Run with the provided script
+python run_app.py
+```
+
+### Option 3: Docker
+```bash
+# Build and run with Docker
+docker build -t oil-gas-app .
+docker run -p 8501:8501 oil-gas-app
 ```
 
 ## 🌐 Deploy to Streamlit Cloud
 
-1. Push this folder to GitHub
+1. Push this repository to GitHub
 2. Go to [share.streamlit.io](https://share.streamlit.io)
 3. Connect your repository
-4. Set main file: `streamlit_oil_gas_app.py`
+4. Set main file: `app.py`
 5. Deploy and get a shareable URL!
 
 ## 📊 Features
@@ -65,12 +82,28 @@ streamlit run streamlit_oil_gas_app.py
 ✅ **Easy sharing** - Web-based investor access
 ✅ **Scalable** - Handles complex scenarios efficiently
 
-## 📁 Files
+## 📁 Project Structure
 
-- `streamlit_oil_gas_app.py` - Main application
-- `requirements.txt` - Dependencies
-- `Dockerfile` - Container deployment
-- `DEPLOYMENT_GUIDE.md` - Detailed deployment options
+```
+├── app.py                     # Main Streamlit entry point
+├── streamlit_oil_gas_app.py  # Core application logic
+├── run_app.py                # Local development runner
+├── requirements.txt          # Python dependencies
+├── Dockerfile               # Container deployment
+├── README.md               # This file
+├── .streamlit/             # Streamlit configuration
+│   └── config.toml
+├── docs/                   # Documentation
+│   └── DEPLOYMENT_GUIDE.md
+└── .gitignore             # Git ignore rules
+```
+
+### Key Features in Latest Update
+- ✨ **Professional Excel Export** - Multi-sheet workbooks with formatting
+- 📊 **Enhanced CSV Export** - Comprehensive reports with all metrics
+- 🎨 **Styled Excel Output** - Headers, borders, colors, auto-sizing
+- 📈 **Executive Summary Sheet** - Investment-grade summary
+- 🎯 **Risk Assessment Export** - Monte Carlo results included
 
 ---
 

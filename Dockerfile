@@ -14,11 +14,13 @@ COPY requirements.txt .
 RUN pip install -r requirements.txt
 
 # Copy application files
+COPY app.py .
 COPY streamlit_oil_gas_app.py .
-COPY DEPLOYMENT_GUIDE.md .
+COPY .streamlit/ .streamlit/
+COPY docs/ docs/
 
 EXPOSE 8501
 
 HEALTHCHECK CMD curl --fail http://localhost:8501/_stcore/health
 
-ENTRYPOINT ["streamlit", "run", "streamlit_oil_gas_app.py", "--server.port=8501", "--server.address=0.0.0.0"]
+ENTRYPOINT ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0"]
