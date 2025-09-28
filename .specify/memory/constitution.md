@@ -1,50 +1,42 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+<!--
+SYNC IMPACT REPORT:
+Version change: INITIAL → 1.0.0
+Modified principles: N/A (Initial constitution creation)
+Added sections: All sections (complete constitution)
+Removed sections: N/A
+Templates requiring updates: ✅ All templates reviewed for consistency
+Follow-up TODOs: None
+-->
+
+# Streamlit Oil & Gas Financial Model Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. Financial Accuracy First
+All financial calculations MUST be mathematically correct and auditable. Monte Carlo simulations require minimum 1000 iterations. NPV, IRR, and payback calculations must use industry-standard formulas. No approximations in financial metrics presented to investors.
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+### II. Real-Time Interactive Analysis
+User interface MUST provide instant feedback on parameter changes. All charts and metrics update dynamically without page refresh. Interactive controls for all key variables (oil/gas prices, production rates, costs). Streamlit's reactive model ensures immediate calculation updates.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+### III. Professional Investment Grade Output
+All visualizations and reports MUST meet professional investment presentation standards. Executive summaries include P10/P50/P90 risk metrics. Export capabilities to Excel/CSV required for investor due diligence. Charts use financial industry color schemes and formatting.
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+### IV. Risk Analysis Completeness
+Monte Carlo risk analysis MUST be comprehensive and statistically valid. Sensitivity analysis on all major variables required. Probability distributions for key uncertainties properly modeled. Risk metrics (VaR, confidence intervals) clearly presented to investors.
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### V. Data Validation & Error Prevention
+All user inputs MUST be validated for reasonable ranges. Error handling prevents application crashes from invalid data. Input constraints based on industry norms (oil prices $20-150/barrel, decline rates 5-50%). Clear error messages guide users to correct inputs.
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+## Performance Standards
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+Streamlit application MUST load within 5 seconds on standard internet connections. Monte Carlo simulations complete within 10 seconds for 1000+ iterations. Charts render smoothly without lag during parameter adjustments. Memory usage remains efficient for extended analysis sessions.
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+## Code Quality Requirements
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+Python code follows PEP 8 standards with proper documentation. Financial formulas include source references and validation tests. Plotly charts use consistent styling and professional themes. Dependencies limited to essential packages in requirements.txt.
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+Constitution supersedes all development practices. Code changes require validation against financial accuracy principles. Monte Carlo implementations must be peer-reviewed for statistical correctness. Investment-grade output standards apply to all user-facing content.
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+**Version**: 1.0.0 | **Ratified**: 2025-09-28 | **Last Amended**: 2025-09-28
